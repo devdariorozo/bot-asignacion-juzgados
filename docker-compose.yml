@@ -1,0 +1,69 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: court-bot-redis
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=America/Bogota
+
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: court-bot-api
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Bogota
+    volumes:
+      - ./logs:/app/logs
+      - ./bot_state.json:/app/bot_state.json
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: court-bot-worker
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Bogota
+    volumes:
+      - ./logs:/app/logs
+      - ./bot_state.json:/app/bot_state.json
+    command: celery -A app.celery_app worker --loglevel=info --pool=solo
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: court-bot-beat
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Bogota
+    volumes:
+      - ./logs:/app/logs
+      - ./bot_state.json:/app/bot_state.json
+    command: celery -A app.celery_app beat --loglevel=info
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: court-bot-flower
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Bogota
+    command: celery -A app.celery_app flower --port=5555
