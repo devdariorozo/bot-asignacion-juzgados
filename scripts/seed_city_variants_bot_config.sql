@@ -8,11 +8,15 @@
 
 USE bot_asignacion_config;
 
--- Valor JSON común para todos los ambientes (Bogotá, Cúcuta, Itagüí)
+-- Valor JSON: solo variantes de NOMBRE (mismo lugar, nombre distinto).
+-- Tildes y mayúsculas/minúsculas se normalizan en código antes de comparar.
+-- Si admin_area_level_1 (ej. Bogotá D.C.) está en algún grupo, el geocode lo usa como ciudad
+-- en lugar de la locality (evita ambigüedades como San Cristóbal en Bogotá vs Medellín).
 SET @city_variants_json = '[
-  ["BOGOTA", "BOGOTÁ", "BOGOTA D.C.", "BOGOTÁ D.C.", "BOGOTA, D.C.", "BOGOTÁ, D.C.", "BOGOTA DC", "BOGOTÁ DC", "BOGOTA D C", "BOGOTÁ D C"],
-  ["CÚCUTA", "CUCUTA", "SAN JOSÉ DE CÚCUTA", "SAN JOSE DE CUCUTA", "SAN JOSÉ DE CUCUTA", "SAN JOSE DE CÚCUTA"],
-  ["ITAGÜI", "ITAGUI", "ITAGÜÍ"]
+  ["BOGOTA", "BOGOTA D.C.", "BOGOTA, D.C.", "BOGOTA DC", "BOGOTA D C"],
+  ["CUCUTA", "SAN JOSE DE CUCUTA"],
+  ["EL ESPINAL", "ESPINAL"],
+  ["CARTAGENA", "CARTAGENA DE INDIAS"]
 ]';
 
 -- Eliminar registros previos de city_variants (evita duplicados al re-ejecutar)

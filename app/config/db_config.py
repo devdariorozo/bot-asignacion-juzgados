@@ -162,7 +162,7 @@ class BotConfig:
             [["BOGOTA", "BOGOTÁ", "BOGOTA D.C.", ...], ["CÚCUTA", "CUCUTA", ...], ...]
         """
         return BotConfig._get_config('city_variants')
-    
+
     @staticmethod
     def clear_cache():
         """

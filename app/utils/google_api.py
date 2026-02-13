@@ -3,6 +3,7 @@ import time
 from typing import Tuple, Optional, List, Dict, Any
 
 from app.utils.database import GOOGLE_API_KEY
+from app.utils.city_variants import normalize_city, is_city_in_any_variant_group
 
 
 def geocode_address_with_logging(
@@ -64,16 +65,31 @@ def geocode_address_with_logging(
             result = data['results'][0]
             location = result['geometry']['location']
             
-            # Extraer ciudad
-            found_city = None
+            # Extraer ciudad: locality, admin_area_level_2 o level_1.
+            # Si administrative_area_level_1 está en algún grupo de city_variants, se usa como ciudad
+            # (evita ambigüedad: San Cristóbal en Bogotá vs Medellín). Una sola fuente de verdad en BD.
+            locality_name = None
+            admin1_name = None
+            admin2_name = None
             for component in result['address_components']:
-                if 'locality' in component['types']:
-                    found_city = component['long_name']
-                    break
-                elif 'administrative_area_level_2' in component['types']:
-                    found_city = component['long_name']
-                    break
-            
+                t = component['types']
+                name = component['long_name']
+                if 'locality' in t:
+                    locality_name = name
+                elif 'administrative_area_level_1' in t:
+                    admin1_name = name
+                elif 'administrative_area_level_2' in t:
+                    admin2_name = name
+
+            if admin1_name and is_city_in_any_variant_group(admin1_name):
+                found_city = admin1_name
+            elif locality_name:
+                found_city = locality_name
+            elif admin2_name:
+                found_city = admin2_name
+            else:
+                found_city = admin1_name
+
             #log de exito
             BotController.log(
                 f"✅ [API SUCCESS] Geocoding - DB: {db_name} - "
